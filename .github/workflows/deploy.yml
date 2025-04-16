@@ -25,7 +25,7 @@ jobs:
             # 初始化Git仓库（如果不存在）
             if [ ! -d .git ]; then
               git init
-              git remote add origin https://github.com/Galimoney/CCL.git
+              git remote add origin https://github.com/GaLimonkey/CCL.git
               git fetch
               git checkout -t origin/main
             else
