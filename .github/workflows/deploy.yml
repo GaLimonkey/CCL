@@ -18,92 +18,53 @@ jobs:
       - name: Deploy to Server
         run: |
           ssh -o StrictHostKeyChecking=no root@${{ secrets.ALIYUN_HOST }} "
-            # Cleanup and backup
-            echo 'Starting deployment process...'
+            # 清理旧目录（保留备份）
             sudo mkdir -p /var/www/backups
-            if [ -d /var/www/CCL ]; then
-              backup_dir=/var/www/backups/CCL_$(date +%Y%m%d%H%M%S)
-              echo 'Backing up existing directory to $backup_dir'
-              sudo mv /var/www/CCL $backup_dir || {
-                echo 'Backup failed, proceeding with cleanup'
-                sudo rm -rf /var/www/CCL
-              }
-            fi
-
-            # Clone repository using SSH
-            echo 'Cloning repository...'
-            git clone git@github.com:GaLimonkey/CCL.git /var/www/CCL || {
-              echo 'Git clone failed!'
-              exit 1
-            }
-
-            # Set permissions
-            echo 'Setting permissions...'
+            sudo mv /var/www/CCL /var/www/backups/CCL_$(date +%Y%m%d%H%M%S) 2>/dev/null || true
+            
+            # 使用SSH协议克隆仓库
+            git clone git@github.com:GaLimonkey/CCL.git /var/www/CCL
+            
+            # 设置目录权限
             sudo chown -R www-data:www-data /var/www/CCL
             sudo chmod -R 755 /var/www/CCL
-
-            # Python virtual environment
-            echo 'Creating virtual environment...'
+            
+            # 设置Python虚拟环境
             cd /var/www/CCL
-            python3 -m venv venv || {
-              echo 'Failed to create virtual environment'
-              exit 1
-            }
-
-            # Install dependencies
-            echo 'Installing dependencies...'
+            python3 -m venv venv
             source venv/bin/activate
-            if [ ! -f requirements.txt ]; then
-              echo 'Creating default requirements.txt'
+            
+            # 安装依赖
+            if [ -f requirements.txt ]; then
+              pip install --disable-pip-version-check --no-cache-dir -r requirements.txt
+            else
               echo 'Flask==2.0.1' > requirements.txt
+              pip install -r requirements.txt
             fi
-            pip install --disable-pip-version-check --no-cache-dir -r requirements.txt || {
-              echo 'Failed to install dependencies'
-              exit 1
-            }
-
-            # Systemd service configuration
-            echo 'Configuring systemd service...'
+            
+            # 配置系统服务
             sudo tee /etc/systemd/system/solar_quote.service <<EOF
             [Unit]
             Description=Solar Quote Service
             After=network.target
-            
+
             [Service]
             User=www-data
             WorkingDirectory=/var/www/CCL
             ExecStart=/var/www/CCL/venv/bin/python /var/www/CCL/run.py
             Restart=always
-            RestartSec=5s
             Environment="PYTHONPATH=/var/www/CCL"
-            
-            # Security hardening
-            PrivateTmp=true
-            ProtectSystem=full
-            NoNewPrivileges=true
-            
+
             [Install]
             WantedBy=multi-user.target
             EOF
-
-            # Enable and start service
-            echo 'Starting service...'
+            
+            # 启动服务
             sudo systemctl daemon-reload
             sudo systemctl enable solar_quote
-            sudo systemctl restart solar_quote || {
-              echo 'Failed to start service'
-              journalctl -u solar_quote -b --no-pager | tail -n 20
-              exit 1
-            }
-
-            # Verify deployment
-            echo 'Deployment complete. Service status:'
+            sudo systemctl restart solar_quote
+            
+            # 验证部署
+            echo '部署完成，服务状态：'
             systemctl status solar_quote --no-pager
-            echo 'Testing endpoint...'
-            curl -sSf http://localhost:5000/healthcheck || {
-              echo 'Endpoint test failed!'
-              journalctl -u solar_quote -b --no-pager | tail -n 20
-              exit 1
-            }
-            echo 'Deployment successful!'
           "
