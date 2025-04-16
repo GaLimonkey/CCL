@@ -15,26 +15,51 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.ALIYUN_SSH_KEY }}
 
-      - name: Setup Known Hosts
-        run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan ${{ secrets.ALIYUN_HOST }} >> ~/.ssh/known_hosts
-
       - name: Deploy to Server
         run: |
           ssh -o StrictHostKeyChecking=no root@${{ secrets.ALIYUN_HOST }} "
-            # 确保目录存在
-            mkdir -p /var/www/CCL || exit 1
-            # 克隆或更新代码
-            if [ -d /var/www/CCL/.git ]; then
-              cd /var/www/CCL
-              git pull origin main
+            # 创建项目目录
+            mkdir -p /var/www/CCL
+            cd /var/www/CCL
+            
+            # 初始化Git仓库（如果不存在）
+            if [ ! -d .git ]; then
+              git init
+              git remote add origin https://github.com/Galimoney/CCL.git
+              git fetch
+              git checkout -t origin/main
             else
-              git clone https://github.com/Galimoney/CCL.git /var/www/CCL
-              cd /var/www/CCL
+              git pull origin main
             fi
-            # 安装依赖并重启服务
+            
+            # 设置Python虚拟环境
+            if [ ! -d venv ]; then
+              python3 -m venv venv
+            fi
+            
+            # 安装依赖
             source venv/bin/activate
-            pip install -r requirements.txt
+            pip install --disable-pip-version-check --no-cache-dir -r requirements.txt
+            
+            # 设置系统服务（如果不存在）
+            if [ ! -f /etc/systemd/system/solar_quote.service ]; then
+              sudo bash -c 'cat > /etc/systemd/system/solar_quote.service <<EOF
+              [Unit]
+              Description=Solar Quote Service
+              After=network.target
+
+              [Service]
+              User=root
+              WorkingDirectory=/var/www/CCL
+              ExecStart=/var/www/CCL/venv/bin/python /var/www/CCL/run.py
+              Restart=always
+
+              [Install]
+              WantedBy=multi-user.target
+              EOF'
+              sudo systemctl daemon-reload
+              sudo systemctl enable solar_quote
+            fi
+            
             sudo systemctl restart solar_quote
           "
