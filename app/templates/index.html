@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Solar Quotation System</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="form-container">
+        <h1>Solar Quotation System</h1>
+        <form method="POST" action="/generate" enctype="multipart/form-data">
+            <!-- 修改Customer Information部分 -->
+            <div class="section">
+                <h2>Customer Information</h2>
+                <div class="form-group">
+                    <label for="project_id">Project ID:</label>
+                    <input type="text" id="project_id" name="project_id" required value="MML0053">
+                </div>
+                <div class="form-group">
+                    <label for="first_name">First Name:</label>
+                    <input type="text" id="first_name" name="first_name" required value="Junhao">
+                </div>
+                <div class="form-group">
+                    <label for="last_name">Last Name:</label>
+                    <input type="text" id="last_name" name="last_name" required value="Sun">
+                </div>
+                <div class="form-group">
+                    <label for="address">Property Address:</label>
+                    <input type="text" id="address" name="address" required value="11 Mountview Rd Malvern, VIC, 3144">
+                </div>
+            </div>
+
+            <!-- Property Details -->
+            <div class="section">
+                <h2>Property Details</h2>
+                <div class="form-group">
+                    <div class="form-row">
+                        <label class="form-label">Roof Material:</label>
+                        <div class="radio-options">
+                            <label class="radio-option">
+                                <input type="radio" name="roof_material" value="Tin">
+                                <span>Tin</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="roof_material" value="Tile">
+                                <span>Tile</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="roof_material" value="Others">
+                                <span>Others</span>
+                                <input type="text" class="other-detail" name="roof_others_detail" placeholder="Please specify" style="display: none;">
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="form-row">
+                        <label class="form-label">Meter Box:</label>
+                        <div class="radio-options">
+                            <label class="radio-option">
+                                <input type="radio" name="meter_box" value="Single Phase">
+                                <span>Single Phase</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="meter_box" value="Two Phase">
+                                <span>Two Phase</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="meter_box" value="Three Phase">
+                                <span>Three Phase</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="form-row">
+                        <label class="form-label">Floor:</label>
+                        <div class="radio-options">
+                            <label class="radio-option">
+                                <input type="radio" name="storey" value="Single">
+                                <span>Single</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="storey" value="Double">
+                                <span>Double</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="storey" value="Other">
+                                <span>Other</span>
+                                <input type="text" class="other-detail" name="storey_other_detail" placeholder="Please specify" style="display: none;">
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Details -->
+            <div class="section">
+                <h2>System Details</h2>
+                <div class="form-group">
+                    <label for="system_size">System Size:</label>
+                    <input type="text" id="system_size" name="system_size" required value="10.56KW Premium Solar Package">
+                </div>
+                
+                <h3>Solar Panels</h3>
+                <div class="form-group">
+                    <label for="panel_module">Panel Model:</label>
+                    <input type="text" id="panel_module" name="panel_module" required value="RSM-Risen-440">
+                </div>
+                <div class="form-group">
+                    <label for="panel_qty">Panel Quantity:</label>
+                    <input type="number" id="panel_qty" name="panel_qty" required value="24">
+                </div>
+                <div class="form-group">
+                    <label for="panel_warranty">Product Warranty:</label>
+                    <input type="text" id="panel_warranty" name="panel_warranty" required value="25 Years">
+                </div>
+                <div class="form-group">
+                    <label for="panel_performance_warranty">Performance Warranty:</label>
+                    <input type="text" id="panel_performance_warranty" name="panel_performance_warranty" required value="30 Years">
+                </div>
+                
+                <h3>Inverter</h3>
+                <div class="form-group">
+                    <label for="inverter_module">Inverter Model:</label>
+                    <input type="text" id="inverter_module" name="inverter_module" required value="Goodwe 8kW 3-P Inverter">
+                </div>
+                <div class="form-group">
+                    <label for="inverter_qty">Inverter Quantity:</label>
+                    <input type="number" id="inverter_qty" name="inverter_qty" required value="1">
+                </div>
+                <div class="form-group">
+                    <label for="inverter_warranty">Product Warranty:</label>
+                    <input type="text" id="inverter_warranty" name="inverter_warranty" required value="10 Years">
+                </div>
+                <div class="form-group">
+                    <label for="inverter_performance_warranty">Performance Warranty:</label>
+                    <input type="text" id="inverter_performance_warranty" name="inverter_performance_warranty" required value="25 Years">
+                </div>
+                
+                <div class="form-group">
+                    <label for="daily_generation">Daily Power Generation:</label>
+                    <input type="text" id="daily_generation" name="daily_generation" required value="27.6kW to 48.9kW">
+                </div>
+            </div>
+
+            <!-- Pricing Information -->
+            <div class="section">
+                <h2>Pricing Information</h2>
+                <div class="form-group">
+                    <label for="stc_rebate">Federal Rebate (STC):</label>
+                    <input type="number" id="stc_rebate" name="stc_rebate" required value="3393">
+                </div>
+                <div class="form-group">
+                    <label for="price_before_rebate">Price Before Rebate:</label>
+                    <input type="number" id="price_before_rebate" name="price_before_rebate" required value="8623">
+                </div>
+                <div class="form-group">
+                    <label for="system_price">System Price:</label>
+                    <input type="number" id="system_price" name="system_price" required value="5230">
+                </div>
+                <div class="form-group">
+                    <label for="total_cost">Total Cost:</label>
+                    <input type="number" id="total_cost" name="total_cost" required value="5230">
+                </div>
+            </div>
+
+            <!-- Solar System Roof Design with Image Upload -->
+            <div class="section">
+                <h2>Solar System Roof Design</h2>
+                <div class="form-group file-upload">
+                    <label for="roof_design_image">Upload Roof Design Image:</label>
+                    <input type="file" id="roof_design_image" name="roof_design_image" accept="image/*">
+                </div>
+            </div>
+
+            <button type="submit">Generate PDF Quotation</button>
+        </form>
+    </div>
+    <script>
+// 显示/隐藏其他选项的输入框
+document.querySelectorAll('input[type="radio"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        const otherDetail = this.closest('.radio-option').querySelector('.other-detail');
+        if (otherDetail) {
+            otherDetail.style.display = this.checked ? 'inline-block' : 'none';
+        }
+    });
+});
+</script>
+</body>
+</html>
