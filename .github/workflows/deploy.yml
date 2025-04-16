@@ -8,16 +8,15 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      - name: Install SSH key
+      - name: Add SSH Key
         uses: shimataro/ssh-key-action@v2
         with:
           key: ${{ secrets.ALIYUN_SSH_KEY }}
-          known_hosts: ${{ secrets.KNOWN_HOSTS }}
+          known_hosts: ${{ secrets.KNOWN_HOSTS || 'github.com' }}
 
-      - name: Deploy to ECS
+      - name: Deploy to Server
         run: |
           ssh -o StrictHostKeyChecking=no root@${{ secrets.ALIYUN_HOST }} "
             cd /var/www/CCL
