@@ -1,0 +1,28 @@
+name: Deploy to Aliyun ECS
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install SSH key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.ALIYUN_SSH_KEY }}
+          known_hosts: ${{ secrets.KNOWN_HOSTS }}
+
+      - name: Deploy to ECS
+        run: |
+          ssh -o StrictHostKeyChecking=no root@${{ secrets.ALIYUN_HOST }} "
+            cd /var/www/CCL
+            git pull origin main
+            source venv/bin/activate
+            pip install -r requirements.txt
+            sudo systemctl restart solar_quote
+          "
