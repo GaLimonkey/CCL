@@ -11,16 +11,21 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Add SSH Key
-        uses: shimataro/ssh-key-action@v2
+        uses: webfactory/ssh-agent@v0.7.0  # 更稳定的替代方案
         with:
-          key: ${{ secrets.ALIYUN_SSH_KEY }}
-          known_hosts: ${{ secrets.KNOWN_HOSTS || 'github.com' }}
+          ssh-private-key: ${{ secrets.ALIYUN_SSH_KEY }}
+
+      - name: Setup Known Hosts
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
 
       - name: Deploy to Server
         run: |
           ssh -o StrictHostKeyChecking=no root@${{ secrets.ALIYUN_HOST }} "
             cd /var/www/CCL
-            git pull origin main
+            git fetch origin main
+            git reset --hard origin/main
             source venv/bin/activate
             pip install -r requirements.txt
             sudo systemctl restart solar_quote
