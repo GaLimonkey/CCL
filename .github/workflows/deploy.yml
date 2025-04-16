@@ -18,18 +18,20 @@ jobs:
       - name: Deploy to Server
         run: |
           ssh -o StrictHostKeyChecking=no root@${{ secrets.ALIYUN_HOST }} "
-            # 创建项目目录
+            # 确保目录存在
             mkdir -p /var/www/CCL
             cd /var/www/CCL
             
-            # 初始化Git仓库（如果不存在）
-            if [ ! -d .git ]; then
+            # 强制重置Git配置
+            if [ -d .git ]; then
+              git remote set-url origin https://github.com/GaLimonkey/CCL.git
+              git fetch --force origin
+              git reset --hard origin/main
+            else
               git init
               git remote add origin https://github.com/GaLimonkey/CCL.git
               git fetch
               git checkout -t origin/main
-            else
-              git pull origin main
             fi
             
             # 设置Python虚拟环境
