@@ -65,26 +65,26 @@ jobs:
             # Systemd service configuration
             echo 'Configuring systemd service...'
             sudo tee /etc/systemd/system/solar_quote.service <<EOF
-[Unit]
-Description=Solar Quote Service
-After=network.target
-
-[Service]
-User=www-data
-WorkingDirectory=/var/www/CCL
-ExecStart=/var/www/CCL/venv/bin/python /var/www/CCL/run.py
-Restart=always
-RestartSec=5s
-Environment="PYTHONPATH=/var/www/CCL"
-
-# Security hardening
-PrivateTmp=true
-ProtectSystem=full
-NoNewPrivileges=true
-
-[Install]
-WantedBy=multi-user.target
-EOF
+            [Unit]
+            Description=Solar Quote Service
+            After=network.target
+            
+            [Service]
+            User=www-data
+            WorkingDirectory=/var/www/CCL
+            ExecStart=/var/www/CCL/venv/bin/python /var/www/CCL/run.py
+            Restart=always
+            RestartSec=5s
+            Environment="PYTHONPATH=/var/www/CCL"
+            
+            # Security hardening
+            PrivateTmp=true
+            ProtectSystem=full
+            NoNewPrivileges=true
+            
+            [Install]
+            WantedBy=multi-user.target
+            EOF
 
             # Enable and start service
             echo 'Starting service...'
