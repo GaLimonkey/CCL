@@ -18,50 +18,17 @@ jobs:
       - name: Deploy to Server
         run: |
           ssh -o StrictHostKeyChecking=no root@${{ secrets.ALIYUN_HOST }} "
-            # 清理旧目录（保留备份）
-            sudo mkdir -p /var/www/backups
-            sudo mv /var/www/CCL /var/www/backups/CCL_$(date +%Y%m%d%H%M%S) 2>/dev/null || true
-            
-            # 使用SSH协议克隆仓库
-            git clone git@github.com:GaLimonkey/CCL.git /var/www/CCL
-            
-            # 设置目录权限
-            sudo chown -R www-data:www-data /var/www/CCL
-            sudo chmod -R 755 /var/www/CCL
-            
-            # 设置Python虚拟环境
+            # 更新代码（使用强制拉取覆盖本地修改）
             cd /var/www/CCL
-            python3 -m venv venv
+            git fetch --all
+            git reset --hard origin/main
+            git pull origin main
+            
+            # 激活虚拟环境并更新依赖
             source venv/bin/activate
+            pip install --disable-pip-version-check --no-cache-dir -r requirements.txt
             
-            # 安装依赖
-            if [ -f requirements.txt ]; then
-              pip install --disable-pip-version-check --no-cache-dir -r requirements.txt
-            else
-              echo 'Flask==2.0.1' > requirements.txt
-              pip install -r requirements.txt
-            fi
-            
-            # 配置系统服务
-            sudo tee /etc/systemd/system/solar_quote.service <<EOF
-            [Unit]
-            Description=Solar Quote Service
-            After=network.target
-
-            [Service]
-            User=www-data
-            WorkingDirectory=/var/www/CCL
-            ExecStart=/var/www/CCL/venv/bin/python /var/www/CCL/run.py
-            Restart=always
-            Environment="PYTHONPATH=/var/www/CCL"
-
-            [Install]
-            WantedBy=multi-user.target
-            EOF
-            
-            # 启动服务
-            sudo systemctl daemon-reload
-            sudo systemctl enable solar_quote
+            # 重启服务
             sudo systemctl restart solar_quote
             
             # 验证部署
