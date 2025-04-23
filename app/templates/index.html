@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Solar Quotation System66666</title>
+    <title>Solar Quotation System</title>
     <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
     <div class="form-container">
-        <h1>Solar Quotation System666</h1>
+        <h1>Solar Quotation System</h1>
         <form method="POST" action="/generate" enctype="multipart/form-data">
             <!-- 修改Customer Information部分 -->
             <div class="section">
@@ -163,7 +163,34 @@
                     <input type="number" id="total_cost" name="total_cost" required value="5230">
                 </div>
             </div>
-
+            <!-- 在表单底部添加 -->
+            <!-- 在表单底部添加 -->
+            <div class="section"> 
+                    <h2>电费对比计算</h2>
+                    <div class="form-group">
+                        <label for="power_usage">用电量 (kWh):</label>
+                        <input type="number" id="power_usage" name="power_usage" required value="3000">
+                    </div>
+                    <div class="form-group">
+                        <label for="billing_period">计费周期 (天):</label>
+                        <input type="number" id="billing_period" name="billing_period" required value="92">
+                    </div>
+                    
+                    <!-- 新增太阳能系统参数 -->
+                    <div class="form-group">
+                        <label for="pv_system">PV System Size (kW):</label>
+                        <input type="number" id="pv_system" name="pv_system" required value="13.2" step="0.1">
+                    </div>
+                    
+                    <!-- 保留原有节省比例字段 -->
+                    <div class="form-group">
+                        <label for="solar_saving">Price (%):</label>
+                        <input type="number" id="solar_saving" name="solar_saving" required value="34" min="0" max="100">
+                    </div>
+                    
+                    <button type="button" id="generate_chart">生成电费对比图表</button>
+                    <div id="chart_container" style="margin-top: 20px;"></div>     
+            </div>
             <!-- Solar System Roof Design with Image Upload -->
             <div class="section">
                 <h2>Solar System Roof Design</h2>
@@ -172,6 +199,11 @@
                     <input type="file" id="roof_design_image" name="roof_design_image" accept="image/*">
                 </div>
             </div>
+            <!-- 电费对比生成后写入隐藏字段 -->
+            <input type="hidden" id="before_total" name="before_total">
+            <input type="hidden" id="after_total" name="after_total">
+            <input type="hidden" id="before_costs" name="before_costs">
+            <input type="hidden" id="after_costs" name="after_costs">
 
             <button type="submit">Generate PDF Quotation</button>
         </form>
@@ -186,6 +218,136 @@ document.querySelectorAll('input[type="radio"]').forEach(radio => {
         }
     });
 });
+</script>
+<!-- 在表单底部添加 -->
+
+
+<script>
+    document.getElementById('generate_chart').addEventListener('click', function() {
+        // 获取输入数据（带默认值）
+        const powerUsage = parseFloat(document.getElementById('power_usage').value) || 3000;
+        const billingPeriod = parseFloat(document.getElementById('billing_period').value) || 92;
+        const pvSystem = parseFloat(document.getElementById('pv_system').value) || 13.2;
+        const solarSaving = (parseFloat(document.getElementById('solar_saving').value) || 34) / 100;
+
+        // 电价表（根据Excel表格中的增长率）
+        const initialRate = 0.34;
+        const growthRate = 0.05; // 5%年增长率
+
+        // 计算无太阳能电费
+        const years = Array.from({length: 10}, (_, i) => 2025 + i);
+        const beforeCosts = years.map((year, index) => {
+            const dailyUsage = powerUsage / billingPeriod;
+            const rate = initialRate * Math.pow(1 + growthRate, index);
+            return Math.round(dailyUsage * rate * 365);
+        });
+
+        // 修正后的计算逻辑
+        const afterCosts = years.map((year, index) => {
+            const dailyUsage = powerUsage / billingPeriod;
+            const Daily_Power_Generation = pvSystem * 4.5; // 每日发电量(kWh)
+            const selfUseRatio = 0.5; // 50%自用
+            const feedInTariff = 0.04; // 上网电价
+            
+            // 从电网购买的电量
+            const gridPurchase = dailyUsage - (Daily_Power_Generation * selfUseRatio);
+            
+            // 卖给电网的电量收入
+            const feedInIncome = feedInTariff * (Daily_Power_Generation * (1 - selfUseRatio)) * 365;
+
+            // 从电网购买的电量(修改版)
+            //const gridPurchase = dailyUsage - (dailyUsage * selfUseRatio);
+            // 卖给电网的电量收入(修改版)
+            //const feedInIncome = feedInTariff * (Daily_Power_Generation - dailyUsage * selfUseRatio) * 365;
+            // 当前年度的电价
+
+            const rate = initialRate * Math.pow(1 + growthRate, index);
+            
+            // 总电费 = 电网购电费用 - 卖电收入
+            const totalCost = (gridPurchase * rate * 365) - feedInIncome;
+            
+            return Math.round(totalCost);
+        });
+
+        // 计算10年总电费
+        const beforeTotal = beforeCosts.reduce((sum, cost) => sum + cost, 0);
+        const afterTotal = afterCosts.reduce((sum, cost) => sum + cost, 0);
+
+        // 计算年度节省和累计节省
+        const annualSavings = years.map((year, index) => beforeCosts[index] - afterCosts[index]);
+        const totalSavings = annualSavings.map((_, i, arr) => arr.slice(0, i + 1).reduce((a, b) => a + b, 0));
+
+        // 填入表单隐藏字段
+        document.getElementById('before_total').value = beforeTotal;
+        document.getElementById('after_total').value = afterTotal;
+        document.getElementById('before_costs').value = beforeCosts.join(',');
+        document.getElementById('after_costs').value = afterCosts.join(',');
+        
+        // 计算回本年限
+        let paybackYear = null;
+        for (let i = 0; i < totalSavings.length; i++) {
+            if (totalSavings[i] >= solarSaving) { 
+                paybackYear = i + 1; // 1-based year count
+                break;
+            }
+        }
+    
+        // 发送请求生成图表
+        fetch('/generate_chart', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                before_total: beforeTotal,
+                after_total: afterTotal,
+                before_costs: beforeCosts,
+                after_costs: afterCosts
+            })
+        })
+        .then(response => response.blob())
+        .then(blob => {
+            const url = URL.createObjectURL(blob);
+            const img = document.createElement('img');
+            img.src = url;
+            img.style.maxWidth = '100%';
+            const container = document.getElementById('chart_container');
+            container.innerHTML = '';
+            container.appendChild(img);
+            
+            // 显示详细计算结果
+            const resultsDiv = document.createElement('div');
+            resultsDiv.innerHTML = `
+                <h3>详细计算结果</h3>
+                <table class="result-table">
+                    <tr>
+                        <th>年份</th>
+                        <th>无太阳能电费</th>
+                        <th>有太阳能电费</th>
+                        <th>差额</th>
+                    </tr>
+                    ${years.map((year, i) => `
+                        <tr>
+                            <td>${year}</td>
+                            <td>$${beforeCosts[i].toLocaleString()}</td>
+                            <td>$${afterCosts[i].toLocaleString()}</td>
+                            <td style="color:${beforeCosts[i] > afterCosts[i] ? 'green' : 'red'}">
+                                $${Math.abs(beforeCosts[i] - afterCosts[i]).toLocaleString()}
+                                ${beforeCosts[i] > afterCosts[i] ? '节省' : '超支'}
+                            </td>
+                        </tr>
+                    `).join('')}
+                </table>
+                <div class="total-result">
+                    <p>10年总电费(无太阳能): <strong>$${beforeTotal.toLocaleString()}</strong></p>
+                    <p>10年总电费(有太阳能): <strong>$${afterTotal.toLocaleString()}</strong></p>
+                    <p>10年净节省: <strong style="color:${beforeTotal > afterTotal ? 'green' : 'red'}">
+                        $${Math.abs(beforeTotal - afterTotal).toLocaleString()}
+                        ${beforeTotal > afterTotal ? '节省' : '超支'}
+                    </strong></p>
+                </div>
+            `;
+            container.appendChild(resultsDiv);
+        });
+    });
 </script>
 </body>
 </html>
