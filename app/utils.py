@@ -22,7 +22,7 @@ def get_radio_value(form_data, main_key, other_key=None, detail_key=None):
             return main_value
     return main_value
 
-def generate_solar_quote(buffer, customer_data, system_details, pricing, roof_design_image_path=None):
+def generate_solar_quote(buffer, customer_data, system_details, pricing, roof_design_image_path=None, chart_buffer=None):
     """生成太阳能报价PDF文档"""
     c = canvas.Canvas(buffer, pagesize=letter)
     width, height = letter
@@ -247,11 +247,51 @@ def generate_solar_quote(buffer, customer_data, system_details, pricing, roof_de
     c.drawString(left_margin, current_y, price_data[-1][0])
     c.drawString(left_margin + 200, current_y, price_data[-1][1])
     
-    # 页脚
-    footer_y = 72  # 底部1英寸边距
-    c.setFont("Helvetica", 8)
-    c.drawString(left_margin, footer_y, "CCL Energy Group Pty Ltd")
-    c.drawString(left_margin, footer_y + line_height/2, "ABN: 61 160 504 763")
+
+    # ========== 第四页：电费对比图表 ==========
+    c.showPage()  # 开始新页面
+    current_y = height - 72  # 从顶部1英寸开始
     
-    # 保存PDF
+    # 1. 添加标题
+    c.setFont("Helvetica-Bold", 16)
+    c.drawCentredString(width/2, current_y, "4. Electricity Cost Comparison")
+    current_y -= 30  # 下移
+    
+    # 2. 嵌入图表（如果有）
+    if chart_buffer:
+        try:
+            # 重置缓冲区指针
+            chart_buffer.seek(0)
+            
+            # 创建ImageReader
+            img = ImageReader(chart_buffer)
+            
+            # 计算图表显示尺寸（保持宽高比）
+            display_width = width - 144  # 两边各留1英寸边距
+            display_height = display_width * 0.6  # 固定比例
+            
+            # 计算绘制位置（居中）
+            x_pos = (width - display_width) / 2
+            y_pos = current_y - display_height - 20  # 留出标题空间
+            
+            # 绘制图表
+            c.drawImage(img, x_pos, y_pos, 
+                       width=display_width, 
+                       height=display_height,
+                       preserveAspectRatio=True)
+            
+            # 添加图表说明
+            c.setFont("Helvetica", 10)
+            c.drawCentredString(width/2, y_pos - 20, 
+                               "Comparison of estimated electricity costs with/without solar system")
+        except Exception as e:
+            print(f"图表嵌入错误: {str(e)}")
+            c.setFont("Helvetica", 12)
+            c.drawString(72, current_y - 50, "Chart could not be displayed")
+    
+    # 添加页脚
+    c.setFont("Helvetica", 8)
+    c.drawString(72, 72, "CCL Energy Group Pty Ltd")
+    c.drawString(72, 84, "ABN: 61 160 504 763")
+    
     c.save()
